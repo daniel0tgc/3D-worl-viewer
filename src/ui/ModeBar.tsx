@@ -24,6 +24,9 @@ const INACTIVE_COLOR = '#4a8a8a'
 export default function ModeBar() {
   const visualMode   = useWorldStore((s) => s.visualMode)
   const setVisualMode = useWorldStore((s) => s.setVisualMode)
+  const hudVisible   = useWorldStore((s) => s.hudVisible)
+
+  if (!hudVisible) return null
 
   return (
     <div

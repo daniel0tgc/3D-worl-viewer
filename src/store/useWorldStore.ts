@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Viewer } from 'cesium'
 
 export type VisualMode = 'NORMAL' | 'CRT' | 'NVG' | 'FLIR' | 'ANIME' | 'NOIR' | 'SNOW' | 'AI_EDIT'
+export type HudLayout = 'TACTICAL' | 'MINIMAL' | 'FULL'
 
 export interface CameraInfo {
   id: string
@@ -48,6 +49,14 @@ interface WorldStore {
   closeCamera: (id: string) => void
   cameraRegistry: Record<string, CameraInfo>
   setCameraRegistry: (r: Record<string, CameraInfo>) => void
+  hudLayout: HudLayout
+  setHudLayout: (l: HudLayout) => void
+  hudVisible: boolean
+  setHudVisible: (v: boolean) => void
+  panopticEnabled: boolean
+  togglePanoptic: () => void
+  panopticDensity: number
+  setPanopticDensity: (n: number) => void
 }
 
 export const useWorldStore = create<WorldStore>((set) => ({
@@ -98,4 +107,16 @@ export const useWorldStore = create<WorldStore>((set) => ({
     set((state) => ({ openCameraIds: state.openCameraIds.filter((c) => c !== id) })),
   cameraRegistry: {},
   setCameraRegistry: (r) => set({ cameraRegistry: r }),
+
+  hudLayout: 'TACTICAL',
+  setHudLayout: (l) => set({ hudLayout: l }),
+
+  hudVisible: true,
+  setHudVisible: (v) => set({ hudVisible: v }),
+
+  panopticEnabled: false,
+  togglePanoptic: () => set((s) => ({ panopticEnabled: !s.panopticEnabled })),
+
+  panopticDensity: 50,
+  setPanopticDensity: (n) => set({ panopticDensity: n }),
 }))

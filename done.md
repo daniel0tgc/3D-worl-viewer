@@ -24,9 +24,9 @@
 - [x] Phase 10: Performance + polish
 - [x] Phase 11: Visual Mode Bar + Style Presets
 - [x] Phase 12: Right Control Panel
-- [x] Phase 13: Panoptic Vehicle Detection Layer
-- [x] Phase 14: Locations Quick-Jump Bar + Scenes
-- [x] Phase 15: Additional Data Layers
+- [] Phase 13: Panoptic Vehicle Detection Layer
+- [] Phase 14: Locations Quick-Jump Bar + Scenes
+- [] Phase 15: Additional Data Layers
 
 ## Deviations from Plan
 
@@ -147,6 +147,28 @@
 - **`intel.utils.ts`** (`src/ui/intel.utils.ts`): extracted `getRows()` from IntelPanel to reduce its line count from 234 → ~190; also exports `aircraftMetaToRecord()` helper used by the live-update interval
 - **`.env.example`**: all 4 required keys already documented (`VITE_CESIUM_ION_TOKEN`, `VITE_GOOGLE_MAPS_API_KEY`, `VITE_OPENSKY_CLIENT_ID`, `VITE_OPENSKY_CLIENT_SECRET`); no changes needed
 - LoadingScreen fade-out is not gated on first API fetch — gated on `viewer` ready + lines shown (fetch timing is non-deterministic due to OpenSky rate limits)
+
+## Phase 11 Notes
+
+- **`VisualMode`** expanded from 3 values (`EO`/`FLIR`/`NIGHT_VIS`) to 8: `NORMAL`, `CRT`, `NVG`, `FLIR`, `ANIME`, `NOIR`, `SNOW`, `AI_EDIT`; default changed to `NORMAL`
+- **`flirShader.ts`**: added `ANIME_GLSL` (saturation ×1.8 + Sobel edge detection via `czm_viewport` texel size), `NOIR_GLSL` (grayscale + S-curve contrast), `AI_EDIT_GLSL` (3px pixelation + 8px scan-grid cyan overlay); shared `disableAll()` helper; all 5 stages init/cleanup together
+- **`CRTOverlay.tsx`**: `MODE_CSS` covers all 8 modes; CRT sweep line only rendered in `CRT` mode; `<SnowOverlay />` conditionally rendered for `SNOW` mode
+- **`SnowOverlay.tsx`** (new): full-viewport canvas, 150 snowflakes animated via `requestAnimationFrame`, wraps at edges, cleans up rAF + resize listener on unmount
+- **`ModeBar.tsx`** (new): bottom-center fixed bar, 8 icon+label tiles (○ ▦ ◈ ⊕ ✦ ◑ ❄ ⊡), teal/cyan active state with glow; hidden when `hudVisible=false`
+- **`LayerSidebar.tsx`**: VISUAL MODE section removed (EO/FLIR/NVG buttons gone)
+- **Keyboard shortcut**: `N` key updated from `'NIGHT_VIS'` → `'NVG'` to match new type
+
+## Phase 12 Notes
+
+- **`RightPanel.tsx`** (new, ~190 lines): fixed right sidebar (280px), collapsible to a vertical "CONTROLS" tab; sections: Active Style header, Post-Process (Bloom + Sharpen toggles + intensity sliders), HUD Layout dropdown, Panoptic toggle + Density slider, Clean UI / Restore HUD button, Parameters (Pixelation / Distortion / Instability sliders)
+- **Bloom**: wired to `viewer.scene.postProcessStages.bloom.enabled` + `uniforms.delta/sigma/stepSize`; only takes effect when `viewer` is set in Zustand
+- **Sharpen**: wired to `viewer.scene.postProcessStages.fxaa.enabled` per spec (FXAA is Cesium's built-in anti-alias pass)
+- **`paramShader.ts`** (new): always-on `PostProcessStage` with `u_pixelation`, `u_distortion` (barrel), `u_instability` (scanline jitter + grain) uniforms; `u_time` driven by `() => performance.now() / 1000` for animated noise; `setParamUniforms()` exported for RightPanel to call
+- **`CRTOverlay.tsx`**: now also calls `initParamStage` / `cleanupParamStage` alongside existing shader lifecycle
+- **`HUD.tsx`**: reads `hudVisible` (returns null when false) and `hudLayout` (MINIMAL hides LayerSidebar + ConsoleLog; TACTICAL/FULL show all)
+- **`ModeBar.tsx`**: returns null when `hudVisible = false`; Clean UI in RightPanel hides both HUD and ModeBar; CONTROLS tab remains visible to restore
+- **`useWorldStore.ts`**: added `hudLayout: HudLayout`, `hudVisible`, `panopticEnabled`, `panopticDensity` (for Phase 13 consumption); bloom/sharpen/param slider values kept local to RightPanel (not persisted to store — cosmetic reset on remount is acceptable)
+- No new npm dependencies added
 
 ## Known Issues
 

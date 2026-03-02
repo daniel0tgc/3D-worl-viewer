@@ -6,6 +6,7 @@ import { useCameraLayer } from './dataFetchers/cameras'
 import { useSeismicLayer } from './dataFetchers/seismic'
 import HUD from './ui/HUD'
 import ModeBar from './ui/ModeBar'
+import RightPanel from './ui/RightPanel'
 import LoadingScreen from './ui/LoadingScreen'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 
@@ -23,6 +24,7 @@ export default function App() {
       <CRTOverlay />
       <HUD />
       <ModeBar />
+      <RightPanel />
       <LoadingScreen />
     </div>
   )

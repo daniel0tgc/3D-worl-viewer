@@ -11,6 +11,7 @@ import {
   enableNoir,
   enableAiEdit,
 } from './flirShader'
+import { initParamStage, cleanupParamStage } from './paramShader'
 import SnowOverlay from './SnowOverlay'
 
 interface ModeCss { scanline: string; vignette: string }
@@ -33,7 +34,11 @@ export default function CRTOverlay() {
   useEffect(() => {
     if (!viewer) return
     initFlirShaderStages(viewer)
-    return () => cleanupShaderStages(viewer)
+    initParamStage(viewer)
+    return () => {
+      cleanupShaderStages(viewer)
+      cleanupParamStage(viewer)
+    }
   }, [viewer])
 
   useEffect(() => {

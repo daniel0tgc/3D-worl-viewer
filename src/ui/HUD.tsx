@@ -1,10 +1,10 @@
+import { useWorldStore } from '../store/useWorldStore'
 import TopBanner from './hud/TopBanner'
 import LayerSidebar from './hud/LayerSidebar'
 import ConsoleLog from './hud/ConsoleLog'
 import CameraPanel from './CameraPanel'
 import IntelPanel from './IntelPanel'
 
-// Reticle crosshair styles — two 1px lines centered in the viewport
 const reticleBase: React.CSSProperties = {
   position: 'absolute',
   top: '50%',
@@ -13,32 +13,25 @@ const reticleBase: React.CSSProperties = {
   pointerEvents: 'none',
 }
 
-const reticleH: React.CSSProperties = {
-  ...reticleBase,
-  width: 20,
-  height: 1,
-  transform: 'translate(-50%, -50%)',
-}
-
-const reticleV: React.CSSProperties = {
-  ...reticleBase,
-  width: 1,
-  height: 20,
-  transform: 'translate(-50%, -50%)',
-}
-
 export default function HUD() {
+  const hudVisible = useWorldStore((s) => s.hudVisible)
+  const hudLayout  = useWorldStore((s) => s.hudLayout)
+
+  if (!hudVisible) return null
+
+  const showSidebar = hudLayout !== 'MINIMAL'
+  const showConsole = hudLayout !== 'MINIMAL'
+
   return (
     <div className="absolute inset-0 pointer-events-none z-50">
       <TopBanner />
-      <LayerSidebar />
-      <ConsoleLog />
+      {showSidebar && <LayerSidebar />}
+      {showConsole && <ConsoleLog />}
 
       {/* Center crosshair reticle */}
-      <div style={reticleH} />
-      <div style={reticleV} />
+      <div style={{ ...reticleBase, width: 20, height: 1, transform: 'translate(-50%, -50%)' }} />
+      <div style={{ ...reticleBase, width: 1, height: 20, transform: 'translate(-50%, -50%)' }} />
 
-      {/* These panels manage their own positioning and pointer-events */}
       <CameraPanel />
       <IntelPanel />
     </div>
