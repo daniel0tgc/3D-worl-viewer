@@ -28,7 +28,7 @@ export function useKeyboardShortcuts(): void {
           setVisualMode('FLIR')
           break
         case 'n':
-          setVisualMode('NIGHT_VIS')
+          setVisualMode('NVG')
           break
         case 'a':
           toggleLayer('aircraft')

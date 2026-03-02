@@ -1,4 +1,4 @@
-import { useWorldStore, type VisualMode } from '../../store/useWorldStore'
+import { useWorldStore } from '../../store/useWorldStore'
 
 const FONT = "'VT323','Courier New',monospace"
 const GREEN = '#00FF41'
@@ -45,8 +45,6 @@ function ToggleRow({ row, active, onToggle }: { row: LayerRow; active: boolean; 
 export default function LayerSidebar() {
   const layers = useWorldStore((s) => s.layers)
   const toggleLayer = useWorldStore((s) => s.toggleLayer)
-  const visualMode = useWorldStore((s) => s.visualMode)
-  const setVisualMode = useWorldStore((s) => s.setVisualMode)
   const aircraftCount = useWorldStore((s) => s.aircraftCount)
   const satelliteCount = useWorldStore((s) => s.satelliteCount)
   const seismicCount = useWorldStore((s) => s.seismicCount)
@@ -57,12 +55,6 @@ export default function LayerSidebar() {
     { key: 'cameras',    label: 'CAMERAS' },
     { key: 'seismic',    label: 'SEISMIC',    count: seismicCount },
     { key: 'grid',       label: 'GRID' },
-  ]
-
-  const modes: { id: VisualMode; label: string }[] = [
-    { id: 'EO',       label: 'EO' },
-    { id: 'FLIR',     label: 'FLIR' },
-    { id: 'NIGHT_VIS', label: 'NVG' },
   ]
 
   return (
@@ -94,34 +86,6 @@ export default function LayerSidebar() {
         />
       ))}
 
-      {/* Visual mode header */}
-      <div style={{ fontSize: 11, color: DIM, letterSpacing: '0.08em', marginTop: 12, marginBottom: 6, borderBottom: `1px solid ${DIM}`, paddingBottom: 4 }}>
-        VISUAL MODE
-      </div>
-
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-        {modes.map(({ id, label }) => {
-          const active = visualMode === id
-          return (
-            <button
-              key={id}
-              onClick={(e) => { setVisualMode(id); (e.currentTarget as HTMLButtonElement).blur() }}
-              style={{
-                fontFamily: FONT,
-                fontSize: 13,
-                cursor: 'pointer',
-                padding: '2px 6px',
-                background: active ? GREEN : 'transparent',
-                color: active ? '#000' : DIM,
-                border: `1px solid ${active ? GREEN : DIM}`,
-                letterSpacing: '0.05em',
-              }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
     </div>
   )
 }

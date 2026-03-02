@@ -38,3 +38,23 @@ Create src/ui/IntelPanel.tsx. When any entity is clicked (aircraft, satellite, c
 Phase 10: Performance & Polish
 
 Optimize WorldView for performance and add final polish: (1) Implement entity clustering for aircraft and satellites when zoomed out (Cesium EntityCluster). (2) Add a loading screen: fullscreen black with "INITIALIZING WORLDVIEW SYSTEMS..." typewriter text, progress steps ("LOADING TERRAIN... ACQUIRING SATELLITES... FETCHING FLIGHT DATA..."), then fade out. (3) Add keyboard shortcuts: F = toggle FLIR, N = night vision, A = toggle aircraft, S = satellites, C = cameras, ESC = deselect entity. (4) Add a README.md with setup instructions, required API keys (Google Maps, Cesium Ion token), and how to run. (5) Ensure all setInterval and event listeners are cleaned up on component unmount to prevent memory leaks. (6) Add error boundaries and graceful fallbacks when APIs are unavailable.
+
+Phase 11: Visual Mode Bar + Style Presets
+
+Add a bottom-center mode switcher bar matching the reference: Normal / CRT / NVG / FLIR / Anime / Noir / Snow / AI Edit as icon+label buttons. Each applies a distinct Cesium PostProcessStage or CSS filter combination. Anime = saturated + cel-shading GLSL. Noir = desaturate + high contrast. Snow = particle overlay. Replace the current EO/FLIR/NVG buttons in the left sidebar with this bottom bar.
+
+Phase 12: Right Control Panel
+
+Add a collapsible right sidebar with: Bloom toggle + intensity slider (wire to Cesium bloom post-process). Sharpen toggle + slider. HUD layout selector dropdown (Tactical / Minimal / Full). Panoptic toggle with density slider (cosmetic for now). Parameters section: Sensitivity, Pixelation, Distortion, Instability sliders that feed into the active PostProcessStage uniforms. Match the teal/dark aesthetic from the reference.
+
+Phase 13: Panoptic Vehicle Detection Layer
+
+This is the biggest feature gap from the reference. Implement a panoptic overlay that draws vehicle detection brackets on the globe when zoomed in below 5km altitude. Use TensorFlow.js coco-ssd running on canvas-captured Cesium frames. Label detected objects as "VEH-XXXX" with corner bracket targeting boxes (dashed rectangles, no fill). Only activate when altitude < 5000m to preserve performance. Add "PANOPTIC" toggle to Zustand and the right panel.
+
+Phase 14: Locations Quick-Jump Bar + Scenes
+
+Add a bottom locations bar with preset city buttons: Austin, San Francisco, New York, Tokyo, London, Paris, Dubai, Washington DC. Each flies the Cesium camera to that city at a fixed altitude. Add a "Scenes" panel (bottom-right of reference) with New/Delete/Load/Update Shot buttons that save and restore camera positions using Zustand + localStorage.
+
+Phase 15: Additional Data Layers
+
+Add three new toggleable layers to match the reference: (1) Weather Radar — fetch NOAA NEXRAD composite radar GeoJSON from https://mesonet.agron.iastate.edu/geojson/radar_stations.geojson and overlay as colored precipitation polygons. (2) Street Traffic — fetch OpenStreetMap Overpass API road segments with speed data for major cities and color-code by congestion (green/yellow/red). (3) MGRS Grid — draw a Military Grid Reference System coordinate overlay on the globe surface that updates with camera position, displaying current MGRS coordinates bottom-left like the reference.

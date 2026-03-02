@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { Viewer } from 'cesium'
 
-export type VisualMode = 'EO' | 'FLIR' | 'NIGHT_VIS'
+export type VisualMode = 'NORMAL' | 'CRT' | 'NVG' | 'FLIR' | 'ANIME' | 'NOIR' | 'SNOW' | 'AI_EDIT'
 
 export interface CameraInfo {
   id: string
@@ -70,7 +70,7 @@ export const useWorldStore = create<WorldStore>((set) => ({
   selectedEntity: null,
   setSelectedEntity: (entity) => set({ selectedEntity: entity }),
 
-  visualMode: 'EO',
+  visualMode: 'NORMAL',
   setVisualMode: (mode) => set({ visualMode: mode }),
 
   satelliteCount: 0,

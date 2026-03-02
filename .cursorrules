@@ -26,3 +26,11 @@ DONE.md
 - At the end of every phase, update DONE.md
 - Mark the phase complete, note any deviations from CONTEXT.md
 - Add any new environment variables to the "Required Keys" section
+PHASES 11-15 SPECIFIC RULES
+- Never remove working code from Phases 1-10 — only extend
+- All new PostProcessStages must be cleaned up on mode change
+- Sliders must debounce at 16ms to avoid per-frame Zustand updates
+- TensorFlow.js must load lazily — never block globe initialization
+- localStorage usage is permitted only for Scenes (Phase 14)
+- New layers follow exact same hook pattern as useAircraftLayer()
+- Performance budget: total entities must stay under 1500 across all layers

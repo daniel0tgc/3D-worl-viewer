@@ -5,6 +5,7 @@ import { useSatelliteLayer } from './dataFetchers/satellites'
 import { useCameraLayer } from './dataFetchers/cameras'
 import { useSeismicLayer } from './dataFetchers/seismic'
 import HUD from './ui/HUD'
+import ModeBar from './ui/ModeBar'
 import LoadingScreen from './ui/LoadingScreen'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 
@@ -21,6 +22,7 @@ export default function App() {
       <CesiumViewer />
       <CRTOverlay />
       <HUD />
+      <ModeBar />
       <LoadingScreen />
     </div>
   )

@@ -22,10 +22,16 @@
 - [x] Phase 8: Seismic data layer (USGS)
 - [x] Phase 9: Entity selection + Intel panel
 - [x] Phase 10: Performance + polish
+- [x] Phase 11: Visual Mode Bar + Style Presets
+- [x] Phase 12: Right Control Panel
+- [x] Phase 13: Panoptic Vehicle Detection Layer
+- [x] Phase 14: Locations Quick-Jump Bar + Scenes
+- [x] Phase 15: Additional Data Layers
 
 ## Deviations from Plan
 
 ### Phase 7
+
 - `SatelliteHUD.tsx` demounted from App.tsx (left on disk); satellite count now lives in `LayerSidebar` via `satelliteCount` store field
 - `AircraftPanel` and `CameraPanel` kept structurally intact and mounted inside `HUD.tsx` without restructuring their internals; full layout consolidation deferred to Phase 9 IntelPanel
 - Crosshair reticle implemented as two inline `div`s inside `HUD.tsx` (no separate file — too small to warrant one)
@@ -34,6 +40,7 @@
 - `LayerSidebar` uses inline styles (not Tailwind classes) for consistency with `TopBanner` and `ConsoleLog` which cannot use Tailwind JIT inside `style={}` blocks
 
 ### Phase 6 (updated post-Phase 7)
+
 - Panels are not draggable — deferred to Phase 9/10 polish (requires drag event handling or a library)
 - Camera icon is canvas-drawn (`20×20px`, phosphor `#00FF41`) consistent with aircraft billboard approach; no external icon asset needed
 - `setCameraRegistry` populates Zustand once on fetch; `CameraPanel` reads purely from store with no prop drilling
@@ -45,6 +52,7 @@
 - Billboard cap raised to 300 total across all three sources combined (was 200 Austin-only)
 
 ### Phase 5
+
 - Starlink group deferred: `state.layers.starlink` added to `LayerState` (defaults to `false`) but no fetcher wired yet — toggle reserved for future expansion
 - `requestAnimationFrame` replaced with `setInterval(5000)` — rAF at 60fps would be wasteful; 5s matches the spec's update intent
 - Orbital path rebuilt every 60s (not every 5s position tick) — rebuilding 180-point polylines at 5s for 25+ satellites is unnecessarily expensive
@@ -53,6 +61,7 @@
 - `selectedEntityChanged` listener populates the existing `SelectedEntity` store with satellite orbital metadata (period, inclination, eccentricity) for Phase 9 IntelPanel integration
 
 ### Phase 4 (updated post-Phase 7)
+
 - No GLTF model available; using canvas-drawn green arrow billboard (`28×28px`, phosphor `#00FF41`, rotated by `-trueTrack` radians). Ground aircraft shown in grey.
 - `SampledPositionProperty` replaced with `ConstantPositionProperty` (trails removed for performance).
 - Entity management uses `CustomDataSource('aircraft')` so `ds.show = false` hides all aircraft without destroying entities when the layer is toggled off.
@@ -64,16 +73,19 @@
 - **Poll interval increased to 20s** (was 15s) to reduce 429 rate; **exponential backoff added**: first 429 waits 40s, doubles each time, capped at 5 minutes, resets to 0 on any successful response.
 
 ### Phase 3
+
 - Added a second "sweep" div (moving gradient line) in `CRTOverlay.tsx` for extra CRT authenticity — not in spec but purely additive
 - Scanline + vignette CSS is tuned per `VisualMode` (EO/FLIR/NIGHT_VIS) so the overlay reinforces the active shader mode visually
 - `@keyframes` defined directly in `index.css` rather than only in `tailwind.config.ts` to ensure the animations are always available regardless of Tailwind's purging
 - `PostProcessStage` lifecycle (init/cleanup) handled inside `CRTOverlay.tsx` so the shader stages are cleaned up when the component unmounts; toggle functions are safe no-ops if called before init
 
 ### Phase 2
+
 - OSM Buildings only added in the fallback path (Cesium World Terrain + Bing). Google Photorealistic 3D Tiles already include full building geometry; adding OSM Buildings on top causes z-fighting. CONTEXT.md lists OSM Buildings as step (3) without specifying conditional, but this is the correct technical approach.
 - `Terrain.fromWorldTerrain()` used instead of deprecated `createWorldTerrainAsync()` (modern Cesium 1.108+ API)
 
 ### Phase 1
+
 - Scaffolded project manually (Vite CLI cancelled on non-empty directory) — structure is identical to `react-ts` template
 - Used `vite-plugin-cesium@1.2.23` (latest available; `^1.3.1` does not exist yet)
 - `satellite.js` v5 ships its own type declarations; `@types/satellite.js` was removed (package does not exist on npm)
@@ -82,16 +94,17 @@
 
 ## Required Keys
 
-| Variable | Used In |
-|---|---|
-| `VITE_CESIUM_ION_TOKEN` | Phase 2 – Cesium Ion terrain / tiles |
-| `VITE_GOOGLE_MAPS_API_KEY` | Phase 2 – Google Photorealistic 3D Tiles |
-| `VITE_OPENSKY_CLIENT_ID` | Phase 4 – OpenSky OAuth2 client credentials |
+| Variable                     | Used In                                     |
+| ---------------------------- | ------------------------------------------- |
+| `VITE_CESIUM_ION_TOKEN`      | Phase 2 – Cesium Ion terrain / tiles        |
+| `VITE_GOOGLE_MAPS_API_KEY`   | Phase 2 – Google Photorealistic 3D Tiles    |
+| `VITE_OPENSKY_CLIENT_ID`     | Phase 4 – OpenSky OAuth2 client credentials |
 | `VITE_OPENSKY_CLIENT_SECRET` | Phase 4 – OpenSky OAuth2 client credentials |
 
 ## Camera Source Expansion (post-Phase 6)
 
 **Changes:**
+
 - `CAP_PER_SOURCE` raised from 130 → 250 per source
 - Added **NYC DOT** cameras (`webcams.nyctmc.org/api/cameras`, 949 cameras): fetched via a Vite dev-server proxy (`/proxy/nyctmc`) to bypass the API's missing `Access-Control-Allow-Origin` header — no separate backend required
 - Added **Caltrans D3** (Sacramento / Central Valley, ~269 cameras)
