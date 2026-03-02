@@ -1,0 +1,28 @@
+You are building WorldView, a geospatial intelligence dashboard.
+
+GENERAL BEHAVIOR
+- Before writing any code, state your plan in 3-5 bullet points
+- Never hardcode API keys, URLs with secrets, or credentials — use .env variables
+- Never mock or fake data — if a real API endpoint exists, use it
+- If you are unsure about a Cesium API, say so rather than guessing
+- Always clean up setInterval, event listeners, and Cesium entities on unmount
+- Keep each file under 200 lines — split into smaller modules if needed
+
+CODE STYLE
+- TypeScript strict mode, no `any` types
+- Functional React components only, no class components
+- All Cesium viewer access via Zustand store (never pass viewer as a prop)
+- Data fetchers live in src/dataFetchers/ and export a single custom hook
+- All environment variables prefixed with VITE_ and documented in .env.example
+
+WHAT TO AVOID
+- Do not install unnecessary dependencies
+- Do not create a backend or proxy server unless explicitly asked
+- Do not use placeholder/lorem ipsum data
+- Do not skip error handling on fetch calls
+- Do not rewrite files from previous phases unless asked
+
+DONE.md
+- At the end of every phase, update DONE.md
+- Mark the phase complete, note any deviations from CONTEXT.md
+- Add any new environment variables to the "Required Keys" section

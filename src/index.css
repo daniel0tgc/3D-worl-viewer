@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #000000;
+  --color-primary: #00ff41;
+  --color-accent: #ff4500;
+  --color-dim: #005c18;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-primary);
+  font-family: "VT323", "Courier New", monospace;
+}
+
+/* Phosphor glow utility */
+.glow {
+  text-shadow:
+    0 0 8px var(--color-primary),
+    0 0 2px var(--color-primary);
+}
+
+.glow-accent {
+  text-shadow:
+    0 0 8px var(--color-accent),
+    0 0 2px var(--color-accent);
+}
+
+/* Remove default Cesium credit banner */
+.cesium-credit-container,
+.cesium-widget-credits {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------------------
+   CRT / terminal animations
+   ------------------------------------------------------------------------- */
+
+@keyframes flicker {
+  0%   { opacity: 0.97; }
+  100% { opacity: 1.0;  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes crt-sweep {
+  0%   { transform: translateY(-100vh); }
+  100% { transform: translateY(100vh);  }
+}
+
+.animate-flicker {
+  animation: flicker 0.1s alternate infinite;
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes console-slide {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes intel-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes intel-row-in {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
