@@ -24,7 +24,7 @@
 - [x] Phase 10: Performance + polish
 - [x] Phase 11: Visual Mode Bar + Style Presets
 - [x] Phase 12: Right Control Panel
-- [] Phase 13: Panoptic Vehicle Detection Layer
+- [x] Phase 13: Panoptic Vehicle Detection Layer
 - [] Phase 14: Locations Quick-Jump Bar + Scenes
 - [] Phase 15: Additional Data Layers
 
@@ -169,6 +169,17 @@
 - **`ModeBar.tsx`**: returns null when `hudVisible = false`; Clean UI in RightPanel hides both HUD and ModeBar; CONTROLS tab remains visible to restore
 - **`useWorldStore.ts`**: added `hudLayout: HudLayout`, `hudVisible`, `panopticEnabled`, `panopticDensity` (for Phase 13 consumption); bloom/sharpen/param slider values kept local to RightPanel (not persisted to store — cosmetic reset on remount is acceptable)
 - No new npm dependencies added
+
+## Phase 13 Notes
+
+- **Approach used**: Web Worker (primary) with TF.js CPU backend fallback. TF.js WebGL backend is unavailable in Web Workers (no WebGL context); TF.js auto-detects and falls back to CPU. Inference runs entirely off the main thread so the Cesium globe is never blocked, even if CPU inference takes 500ms–1.5s.
+- **`panopticWorker.ts`**: `/// <reference lib="webworker" />` required since `tsconfig.app.json` does not include `"WebWorker"` lib. Model loaded once with `cocoSsd.load({ base: 'lite_mobilenet_v2' })` (lightest model variant). base64 JPEG → Blob → `createImageBitmap()` → `OffscreenCanvas` → `model.detect()`. `OffscreenCanvas` is accepted by coco-ssd as a valid input type (worker-safe, no DOM dependency).
+- **`panoptic.ts`**: `usePanopticLayer()` hook manages worker lifecycle. `setInterval(2000ms)` checks altitude each tick; if `viewer.camera.positionCartographic.height >= 5000m`, fires "ALTITUDE TOO HIGH" console event once (debounced by `altWarned` ref). `busyRef` prevents queuing multiple concurrent inference jobs. Stable IDs assigned by IoU > 0.5 match against previous frame's bboxes; new detections get random 4-digit suffix.
+- **Score threshold**: `0.7 - (density / 100) * 0.4` (density=0 → 0.7, density=100 → 0.3)
+- **Filtered labels**: `car`, `truck`, `bus`, `bicycle`, `motorcycle` → prefix `VEH-XXXX`; `person` → `PED-XXXX`
+- **`PanopticOverlay.tsx`**: fixed canvas matching window dimensions; scale factors computed from Cesium canvas vs window size. Draws 10px corner L-brackets per detection (no full rectangle). Redraws on every `panopticDetections` store change.
+- **`useWorldStore.ts`**: `panopticDetections: Detection[]` + `setPanopticDetections` added (~137 lines total)
+- **New dependencies**: `@tensorflow/tfjs`, `@tensorflow-models/coco-ssd`
 
 ## Known Issues
 

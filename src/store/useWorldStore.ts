@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { Viewer } from 'cesium'
+import type { Detection } from '../effects/panoptic'
 
 export type VisualMode = 'NORMAL' | 'CRT' | 'NVG' | 'FLIR' | 'ANIME' | 'NOIR' | 'SNOW' | 'AI_EDIT'
 export type HudLayout = 'TACTICAL' | 'MINIMAL' | 'FULL'
@@ -57,6 +58,8 @@ interface WorldStore {
   togglePanoptic: () => void
   panopticDensity: number
   setPanopticDensity: (n: number) => void
+  panopticDetections: Detection[]
+  setPanopticDetections: (d: Detection[]) => void
 }
 
 export const useWorldStore = create<WorldStore>((set) => ({
@@ -119,4 +122,7 @@ export const useWorldStore = create<WorldStore>((set) => ({
 
   panopticDensity: 50,
   setPanopticDensity: (n) => set({ panopticDensity: n }),
+
+  panopticDetections: [],
+  setPanopticDetections: (d) => set({ panopticDetections: d }),
 }))

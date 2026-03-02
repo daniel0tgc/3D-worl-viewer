@@ -7,8 +7,10 @@ import { useSeismicLayer } from './dataFetchers/seismic'
 import HUD from './ui/HUD'
 import ModeBar from './ui/ModeBar'
 import RightPanel from './ui/RightPanel'
+import PanopticOverlay from './ui/PanopticOverlay'
 import LoadingScreen from './ui/LoadingScreen'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { usePanopticLayer } from './effects/panoptic'
 
 export default function App() {
   useAircraftLayer()
@@ -16,6 +18,7 @@ export default function App() {
   useCameraLayer()
   useSeismicLayer()
   useKeyboardShortcuts()
+  usePanopticLayer()
 
   return (
     // border-radius + overflow:hidden gives the bezel-curve CRT illusion
@@ -25,6 +28,7 @@ export default function App() {
       <HUD />
       <ModeBar />
       <RightPanel />
+      <PanopticOverlay />
       <LoadingScreen />
     </div>
   )
