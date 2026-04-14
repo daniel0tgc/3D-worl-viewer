@@ -1,15 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { CustomDataSource, defined } from 'cesium'
 import { useWorldStore } from '../store/useWorldStore'
+import { getOpenSkyStatesUrl } from '../config/publicApi'
 import { upsertAircraftEntity, setupClustering, type AircraftState, type AircraftTrack } from './opensky.entities'
 import { getAuthHeader } from './opensky.auth'
 
 /** Module-level map so IntelPanel can read live aircraft state between polls */
 export const aircraftMetaStore = new Map<string, AircraftState>()
-
-// Bounding box: continental US only — reduces response from ~8 000 to ~500 aircraft
-const OPENSKY_URL =
-  'https://opensky-network.org/api/states/all?lamin=24&lomin=-125&lamax=50&lomax=-65'
 const POLL_MS = 20_000
 const STALE_MS = 30_000
 const MAX_ENTITIES = 300
@@ -50,8 +47,8 @@ async function fetchStates(): Promise<AircraftState[]> {
   const now = Date.now()
   if (now - _lastFetchMs < Math.max(MIN_FETCH_GAP_MS, _backoffMs)) return []
   _lastFetchMs = now
-  const headers = await getAuthHeader()
-  const res = await fetch(OPENSKY_URL, { headers })
+  const headers = import.meta.env.DEV ? await getAuthHeader() : {}
+  const res = await fetch(getOpenSkyStatesUrl(), { headers })
   if (res.status === 429) {
     _backoffMs = Math.min((_backoffMs || POLL_MS) * 2, 300_000)
     throw new Error('OpenSky 429')

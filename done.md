@@ -98,21 +98,32 @@
 | ---------------------------- | ------------------------------------------- |
 | `VITE_CESIUM_ION_TOKEN`      | Phase 2 – Cesium Ion terrain / tiles        |
 | `VITE_GOOGLE_MAPS_API_KEY`   | Phase 2 – Google Photorealistic 3D Tiles    |
-| `VITE_OPENSKY_CLIENT_ID`     | Phase 4 – OpenSky OAuth2 client credentials |
-| `VITE_OPENSKY_CLIENT_SECRET` | Phase 4 – OpenSky OAuth2 client credentials |
+| `VITE_OPENSKY_CLIENT_ID`     | Phase 4 – OpenSky OAuth2 (local `npm run dev` only) |
+| `VITE_OPENSKY_CLIENT_SECRET` | Phase 4 – OpenSky OAuth2 (local `npm run dev` only) |
+| `OPENSKY_CLIENT_ID`          | Vercel serverless – OpenSky proxy (`api/opensky`), not bundled in client |
+| `OPENSKY_CLIENT_SECRET`      | Vercel serverless – OpenSky proxy (`api/opensky`), not bundled in client |
+
+## Production (Vercel)
+
+- **OpenSky CORS**: Browsers cannot call `opensky-network.org` from arbitrary origins. Production builds use same-origin **`/api/opensky/states/all`** ([api/opensky/[...slug].ts](api/opensky/[...slug].ts)) with OAuth via [server/openskyProxyAuth.ts](server/openskyProxyAuth.ts) and **`OPENSKY_CLIENT_ID` / `OPENSKY_CLIENT_SECRET`** in Vercel env.
+- **NYC DOT**: Production uses **`/api/proxy/nyctmc/api/cameras`** ([api/proxy/nyctmc/[...path].ts](api/proxy/nyctmc/[...path].ts)); dev still uses Vite **`/proxy/nyctmc`** ([vite.config.ts](vite.config.ts)). URLs are chosen in [src/config/publicApi.ts](src/config/publicApi.ts).
+- **[vercel.json](vercel.json)**: SPA fallback rewrites non-`api/*` paths to `index.html` (static assets and `/api/*` are served first by Vercel).
+- **Google 3D Tiles**: Add production and preview referrers (`https://*.vercel.app/*`, custom domain) to the Maps API key in Google Cloud Console.
+- **Caltrans**: [cameras.sources.ts](src/dataFetchers/cameras.sources.ts) retries each district JSON up to 2 times on connection errors to reduce `ERR_CONNECTION_CLOSED` noise.
+- **`@vercel/node`**: devDependency for TypeScript types on Vercel serverless handlers in `api/`.
 
 ## Camera Source Expansion (post-Phase 6)
 
 **Changes:**
 
 - `CAP_PER_SOURCE` raised from 130 → 250 per source
-- Added **NYC DOT** cameras (`webcams.nyctmc.org/api/cameras`, 949 cameras): fetched via a Vite dev-server proxy (`/proxy/nyctmc`) to bypass the API's missing `Access-Control-Allow-Origin` header — no separate backend required
+- Added **NYC DOT** cameras (`webcams.nyctmc.org/api/cameras`, 949 cameras): dev uses Vite proxy `/proxy/nyctmc`; production uses Vercel serverless `/api/proxy/nyctmc` (see Production section)
 - Added **Caltrans D3** (Sacramento / Central Valley, ~269 cameras)
 - Added **Caltrans D11** (San Diego, confirmed CORS-enabled)
 - Total live sources: Austin + NYC + Caltrans D3/D4/D7/D11 (6 sources)
 - **Boston/MA**: No public CORS-enabled camera API found. Mass511 is a closed SPA; MassDOT has no open JSON feed. Can be added later with a lightweight serverless proxy.
 
-**Note:** The Vite proxy (`server.proxy` in `vite.config.ts`) only applies during `npm run dev`. Production deployments will need a separate reverse-proxy rule for the `/proxy/nyctmc` path.
+**Note:** ~~Production previously had no NYC proxy~~ — resolved via `api/proxy/nyctmc` on Vercel (see Production section).
 
 ## Phase 8 Notes
 
@@ -172,15 +183,12 @@
 
 ## Phase 13 Notes
 
-- **Approach used**: Web Worker (primary) with TF.js CPU backend fallback. TF.js WebGL backend is unavailable in Web Workers (no WebGL context); TF.js auto-detects and falls back to CPU. Inference runs entirely off the main thread so the Cesium globe is never blocked, even if CPU inference takes 500ms–1.5s.
-- **`panopticWorker.ts`**: `/// <reference lib="webworker" />` required since `tsconfig.app.json` does not include `"WebWorker"` lib. Model loaded once with `cocoSsd.load({ base: 'lite_mobilenet_v2' })` (lightest model variant). base64 JPEG → Blob → `createImageBitmap()` → `OffscreenCanvas` → `model.detect()`. `OffscreenCanvas` is accepted by coco-ssd as a valid input type (worker-safe, no DOM dependency).
-- **`panoptic.ts`**: `usePanopticLayer()` hook manages worker lifecycle. `setInterval(2000ms)` checks altitude each tick; if `viewer.camera.positionCartographic.height >= 5000m`, fires "ALTITUDE TOO HIGH" console event once (debounced by `altWarned` ref). `busyRef` prevents queuing multiple concurrent inference jobs. Stable IDs assigned by IoU > 0.5 match against previous frame's bboxes; new detections get random 4-digit suffix.
-- **Score threshold**: `0.7 - (density / 100) * 0.4` (density=0 → 0.7, density=100 → 0.3)
-- **Filtered labels**: `car`, `truck`, `bus`, `bicycle`, `motorcycle` → prefix `VEH-XXXX`; `person` → `PED-XXXX`
-- **`PanopticOverlay.tsx`**: fixed canvas matching window dimensions; scale factors computed from Cesium canvas vs window size. Draws 10px corner L-brackets per detection (no full rectangle). Redraws on every `panopticDetections` store change.
-- **`useWorldStore.ts`**: `panopticDetections: Detection[]` + `setPanopticDetections` added (~137 lines total)
-- **New dependencies**: `@tensorflow/tfjs`, `@tensorflow-models/coco-ssd`
+- **Panoptic (cosmetic simulation)**: ML detection was removed; real coco-ssd returns 0 objects on aerial top-down imagery. Panoptic now uses a **canvas-based cosmetic simulation**: main-thread pixel analysis in `panopticHeuristic.ts` (grid scan + inner-vs.-ring luminance contrast) to find bright rectangular regions on dark backgrounds; VEH-XXXX corner brackets are drawn at those positions. **Altitude gate 3000m** (was 5000m). Density slider caps bracket count (8–50). Stable IDs via IoU > 0.5 matching across frames. All existing UI, console events ("PANOPTIC ACTIVE — N OBJECTS DETECTED", "ALTITUDE TOO HIGH FOR PANOPTIC"), and RightPanel toggle/slider unchanged.
+- **`panopticWorker.ts`**: deleted; no Web Worker or TensorFlow.js.
+- **`panopticHeuristic.ts`** (new): draws Cesium canvas to 2D OffscreenCanvas, getImageData, builds luminance grid; grid step 22px, vehicle-like rect 14×28px, 3px ring; contrast threshold 22; NMS IoU 0.5; max brackets `8 + (density/100)*42`.
+- **`panoptic.ts`**: `usePanopticLayer()` runs `setInterval(2000ms)`, calls `detectVehicleLikeRegions(canvas, panopticDensity)`, assigns stable IDs, updates store and console. No TF dependencies.
+- **Dependencies**: `@tensorflow/tfjs` and `@tensorflow-models/coco-ssd` removed from package.json.
 
 ## Known Issues
 
-<!-- Track bugs to fix later -->
+- `npm run build` + `vite preview` uses production API paths (`/api/opensky`, `/api/proxy/nyctmc`) with no local server — use `vercel dev` or deploy to Vercel to exercise proxies. Local aircraft/NYC during dev: `npm run dev`.

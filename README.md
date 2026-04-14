@@ -1,6 +1,6 @@
 # WorldView — Geospatial Intelligence Dashboard
 
-A browser-based, real-time geospatial intelligence dashboard built on CesiumJS. Renders a photorealistic 3D globe with multiple live data layers—aircraft, satellites, traffic cameras, and seismic events—styled as a classified military terminal from the early 2000s. No backend required.
+A browser-based, real-time geospatial intelligence dashboard built on CesiumJS. Renders a photorealistic 3D globe with multiple live data layers—aircraft, satellites, traffic cameras, and seismic events—styled as a classified military terminal from the early 2000s. **Local dev** is static-only (Vite); **Vercel production** adds minimal serverless routes (`/api/opensky`, `/api/proxy/nyctmc`) so OpenSky and NYC DOT work in the browser despite CORS.
 
 ---
 
@@ -189,7 +189,18 @@ VITE_OPENSKY_CLIENT_SECRET=your_opensky_client_secret_here  # optional
 | `VITE_OPENSKY_CLIENT_ID` | No | OpenSky OAuth2 (higher rate limit) |
 | `VITE_OPENSKY_CLIENT_SECRET` | No | OpenSky OAuth2 (higher rate limit) |
 
-If `VITE_OPENSKY_CLIENT_ID` / `VITE_OPENSKY_CLIENT_SECRET` are absent, the app falls back to anonymous OpenSky requests (lower rate limit; 429 backoff applies).
+If `VITE_OPENSKY_CLIENT_ID` / `VITE_OPENSKY_CLIENT_SECRET` are absent, local dev falls back to anonymous OpenSky requests (lower rate limit; 429 backoff applies).
+
+### Vercel (production)
+
+In the Vercel project dashboard, set the same `VITE_*` variables for the build, and add **server-only** OpenSky credentials (no `VITE_` prefix) so the `/api/opensky` function can attach OAuth without exposing secrets in the client bundle:
+
+```env
+OPENSKY_CLIENT_ID=…
+OPENSKY_CLIENT_SECRET=…
+```
+
+If these are omitted, the production proxy still works using anonymous OpenSky (stricter rate limits). Restrict your **Google Maps API key** by HTTP referrer to include `https://<your-project>.vercel.app/*` and `https://*.vercel.app/*` if you use preview deployments.
 
 ---
 
@@ -198,10 +209,10 @@ If `VITE_OPENSKY_CLIENT_ID` / `VITE_OPENSKY_CLIENT_SECRET` are absent, the app f
 ```bash
 npm run build
 # Output in /dist
-npm run preview  # Preview the production build locally
+npm run preview  # Serves the SPA only; /api/* proxies exist on Vercel (use `vercel dev` to test them locally)
 ```
 
-> **Note:** The Vite dev-server proxy for NYC DOT cameras (`/proxy/nyctmc`) only applies during `npm run dev`. For production deployments, configure a reverse-proxy rule for this path at the server level.
+> **Note:** NYC DOT and OpenSky use Vercel serverless routes under `/api/` (see [vercel.json](vercel.json) and `api/`). `vite preview` does not run those handlers.
 
 ---
 

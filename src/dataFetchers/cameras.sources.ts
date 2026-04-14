@@ -1,4 +1,5 @@
 import type { CameraRecord } from './cameras.entities'
+import { getNycCamerasUrl } from '../config/publicApi'
 
 export interface CameraEntry extends CameraRecord {
   snapshotUrl: string
@@ -83,22 +84,34 @@ function parseCaltrans(district: string, payload: CaltransRaw): CameraEntry[] {
   return results
 }
 
+const CALTRANS_RETRIES = 2
+const CALTRANS_RETRY_MS = 400
+
 async function fetchCaltrans(district: string): Promise<CameraEntry[]> {
-  // district = 'd7' → path segment 'd7', filename segment 'D07'
   const num = district.replace(/\D/g, '').padStart(2, '0')
   const url = `https://cwwp2.dot.ca.gov/data/${district}/cctv/cctvStatusD${num}.json`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Caltrans ${district} ${res.status}`)
-  return parseCaltrans(district, (await res.json()) as CaltransRaw)
+  let lastErr: unknown
+  for (let attempt = 0; attempt <= CALTRANS_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`Caltrans ${district} ${res.status}`)
+      return parseCaltrans(district, (await res.json()) as CaltransRaw)
+    } catch (e) {
+      lastErr = e
+      const retry =
+        attempt < CALTRANS_RETRIES &&
+        (e instanceof TypeError ||
+          (e instanceof Error && /fetch|network|Failed to fetch/i.test(e.message)))
+      if (retry) await new Promise((r) => setTimeout(r, CALTRANS_RETRY_MS * (attempt + 1)))
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr))
 }
 
 // ---------------------------------------------------------------------------
 // NYC DOT (webcams.nyctmc.org) — no CORS headers on their API, so the Vite
 // dev-server proxy at /proxy/nyctmc forwards requests without CORS issues.
 // ---------------------------------------------------------------------------
-
-// Routed through the Vite dev-server proxy defined in vite.config.ts
-const NYC_URL = '/proxy/nyctmc/api/cameras'
 
 interface NycRaw {
   id?: string
@@ -126,7 +139,7 @@ function parseNyc(data: NycRaw[]): CameraEntry[] {
 }
 
 async function fetchNyc(): Promise<CameraEntry[]> {
-  const res = await fetch(NYC_URL)
+  const res = await fetch(getNycCamerasUrl())
   if (!res.ok) throw new Error(`NYC DOT ${res.status}`)
   return parseNyc((await res.json()) as NycRaw[])
 }

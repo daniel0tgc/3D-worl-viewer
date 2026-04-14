@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useWorldStore } from '../store/useWorldStore'
-import PanopticWorker from './panopticWorker?worker'
-import type { WorkerDetection } from './panopticWorker'
+import { detectVehicleLikeRegions } from './panopticHeuristic'
 
 export interface Detection {
   id: string
@@ -10,8 +9,7 @@ export interface Detection {
   bbox: [number, number, number, number]
 }
 
-const VEHICLE_LABELS = new Set(['car', 'truck', 'bus', 'bicycle', 'motorcycle'])
-const ALTITUDE_LIMIT = 5000
+const ALTITUDE_LIMIT = 3000
 
 function iou(a: [number, number, number, number], b: [number, number, number, number]): number {
   const ax2 = a[0] + a[2], ay2 = a[1] + a[3]
@@ -34,46 +32,17 @@ export function usePanopticLayer(): void {
   const addConsoleEvent  = useWorldStore((s) => s.addConsoleEvent)
   const setPanopticDetections = useWorldStore((s) => s.setPanopticDetections)
 
-  const workerRef   = useRef<Worker | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const prevRef     = useRef<Detection[]>([])
-  const busyRef     = useRef(false)
   const altWarned   = useRef(false)
 
   useEffect(() => {
     if (!viewer || !panopticEnabled) {
-      if (workerRef.current) { workerRef.current.terminate(); workerRef.current = null }
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
       setPanopticDetections([])
       prevRef.current = []
-      busyRef.current = false
       altWarned.current = false
       return
-    }
-
-    const threshold = 0.7 - (panopticDensity / 100) * 0.4
-
-    const worker = new PanopticWorker()
-    workerRef.current = worker
-
-    worker.onmessage = (e: MessageEvent<{ detections: WorkerDetection[] }>) => {
-      busyRef.current = false
-      const raw = e.data.detections ?? []
-
-      const filtered = raw.filter(
-        (d) => (VEHICLE_LABELS.has(d.label) || d.label === 'person') && d.score >= threshold
-      )
-
-      const assigned: Detection[] = filtered.map((d) => {
-        const match = prevRef.current.find((p) => iou(p.bbox, d.bbox) > 0.5)
-        const prefix = VEHICLE_LABELS.has(d.label) ? 'VEH' : 'PED'
-        const id = match ? match.id : `${prefix}-${randomId()}`
-        return { id, label: d.label, score: d.score, bbox: d.bbox }
-      })
-
-      prevRef.current = assigned
-      setPanopticDetections(assigned)
-      addConsoleEvent(`PANOPTIC ACTIVE — ${assigned.length} OBJECTS DETECTED`)
     }
 
     intervalRef.current = setInterval(() => {
@@ -86,22 +55,24 @@ export function usePanopticLayer(): void {
         return
       }
       altWarned.current = false
-      if (busyRef.current) return
-      busyRef.current = true
 
-      const canvas = viewer.scene.canvas
-      const base64 = canvas.toDataURL('image/jpeg', 0.5)
-      worker.postMessage({ base64, width: canvas.width, height: canvas.height })
+      const raw = detectVehicleLikeRegions(viewer.scene.canvas, panopticDensity)
+      const assigned: Detection[] = raw.map((d) => {
+        const match = prevRef.current.find((p) => iou(p.bbox, d.bbox) > 0.5)
+        const id = match ? match.id : `VEH-${randomId()}`
+        return { id, label: 'vehicle', score: d.score, bbox: d.bbox }
+      })
+
+      prevRef.current = assigned
+      setPanopticDetections(assigned)
+      addConsoleEvent(`PANOPTIC ACTIVE — ${assigned.length} OBJECTS DETECTED`)
     }, 2000)
 
     return () => {
-      worker.terminate()
-      workerRef.current = null
       if (intervalRef.current) clearInterval(intervalRef.current)
       intervalRef.current = null
       setPanopticDetections([])
       prevRef.current = []
-      busyRef.current = false
     }
   }, [viewer, panopticEnabled, panopticDensity, addConsoleEvent, setPanopticDetections])
 }
