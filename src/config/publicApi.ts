@@ -17,3 +17,16 @@ export function getNycCamerasUrl(): string {
   if (import.meta.env.DEV) return '/proxy/nyctmc/api/cameras'
   return '/api/proxy/nyctmc/api/cameras'
 }
+
+/** Caltrans CCTV JSON: direct in dev; production uses whitelisted `/api/proxy/caltrans`. */
+export function getCaltransCctvUrl(district: string): string {
+  const d = district.toLowerCase()
+  if (!/^d(3|4|7|11)$/.test(d)) {
+    throw new Error(`Invalid Caltrans district: ${district}`)
+  }
+  if (import.meta.env.DEV) {
+    const num = d.replace(/\D/g, '').padStart(2, '0')
+    return `https://cwwp2.dot.ca.gov/data/${d}/cctv/cctvStatusD${num}.json`
+  }
+  return `/api/proxy/caltrans?district=${encodeURIComponent(d)}`
+}

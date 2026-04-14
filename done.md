@@ -100,16 +100,17 @@
 | `VITE_GOOGLE_MAPS_API_KEY`   | Phase 2 – Google Photorealistic 3D Tiles    |
 | `VITE_OPENSKY_CLIENT_ID`     | Phase 4 – OpenSky OAuth2 (local `npm run dev` only) |
 | `VITE_OPENSKY_CLIENT_SECRET` | Phase 4 – OpenSky OAuth2 (local `npm run dev` only) |
-| `OPENSKY_CLIENT_ID`          | Vercel serverless – OpenSky proxy (`api/opensky`), not bundled in client |
-| `OPENSKY_CLIENT_SECRET`      | Vercel serverless – OpenSky proxy (`api/opensky`), not bundled in client |
+| `OPENSKY_CLIENT_ID`          | Vercel serverless – OpenSky proxy ([api/opensky/states/all.ts](api/opensky/states/all.ts)), not bundled in client |
+| `OPENSKY_CLIENT_SECRET`      | Vercel serverless – OpenSky proxy ([api/opensky/states/all.ts](api/opensky/states/all.ts)), not bundled in client |
 
 ## Production (Vercel)
 
-- **OpenSky CORS**: Browsers cannot call `opensky-network.org` from arbitrary origins. Production builds use same-origin **`/api/opensky/states/all`** ([api/opensky/[...slug].ts](api/opensky/[...slug].ts)) with OAuth via [server/openskyProxyAuth.ts](server/openskyProxyAuth.ts) and **`OPENSKY_CLIENT_ID` / `OPENSKY_CLIENT_SECRET`** in Vercel env.
-- **NYC DOT**: Production uses **`/api/proxy/nyctmc/api/cameras`** ([api/proxy/nyctmc/[...path].ts](api/proxy/nyctmc/[...path].ts)); dev still uses Vite **`/proxy/nyctmc`** ([vite.config.ts](vite.config.ts)). URLs are chosen in [src/config/publicApi.ts](src/config/publicApi.ts).
+- **Static `api/` paths (Vite, not Next.js)**: Catch-all files like `api/.../[...slug].ts` are unreliable on Vercel without Next.js. Use **one file per route**: [api/opensky/states/all.ts](api/opensky/states/all.ts), [api/proxy/nyctmc/api/cameras.ts](api/proxy/nyctmc/api/cameras.ts), [api/proxy/caltrans.ts](api/proxy/caltrans.ts). Shared OAuth helper: [api/_lib/openskyProxyAuth.ts](api/_lib/openskyProxyAuth.ts) (underscore folder; imports use `.js` extension for NodeNext).
+- **OpenSky CORS**: Production uses same-origin **`/api/opensky/states/all`** with **`OPENSKY_CLIENT_ID` / `OPENSKY_CLIENT_SECRET`** in Vercel env.
+- **NYC DOT**: **`/api/proxy/nyctmc/api/cameras`**; dev uses Vite **`/proxy/nyctmc`** ([vite.config.ts](vite.config.ts)). URLs in [src/config/publicApi.ts](src/config/publicApi.ts).
+- **Caltrans**: Production uses whitelisted **`/api/proxy/caltrans?district=d3|d4|d7|d11`** so JSON is fetched server-side when the browser hits `ERR_CONNECTION_CLOSED` to Caltrans. Dev still uses direct `cwwp2.dot.ca.gov` URLs. Retries in [cameras.sources.ts](src/dataFetchers/cameras.sources.ts) unchanged.
 - **[vercel.json](vercel.json)**: SPA fallback rewrites non-`api/*` paths to `index.html` (static assets and `/api/*` are served first by Vercel).
-- **Google 3D Tiles**: Add production and preview referrers (`https://*.vercel.app/*`, custom domain) to the Maps API key in Google Cloud Console.
-- **Caltrans**: [cameras.sources.ts](src/dataFetchers/cameras.sources.ts) retries each district JSON up to 2 times on connection errors to reduce `ERR_CONNECTION_CLOSED` noise.
+- **Google 3D Tiles**: Add production and preview HTTP referrers to the Maps API key; **rotate the key** if it was exposed in client logs or DevTools.
 - **`@vercel/node`**: devDependency for TypeScript types on Vercel serverless handlers in `api/`.
 
 ## Camera Source Expansion (post-Phase 6)

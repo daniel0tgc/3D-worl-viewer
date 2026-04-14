@@ -200,7 +200,9 @@ OPENSKY_CLIENT_ID=…
 OPENSKY_CLIENT_SECRET=…
 ```
 
-If these are omitted, the production proxy still works using anonymous OpenSky (stricter rate limits). Restrict your **Google Maps API key** by HTTP referrer to include `https://<your-project>.vercel.app/*` and `https://*.vercel.app/*` if you use preview deployments.
+If these are omitted, the production proxy still works using anonymous OpenSky (stricter rate limits). Restrict your **Google Maps API key** by HTTP referrer to include `https://<your-project>.vercel.app/*` and `https://*.vercel.app/*` if you use preview deployments. **Rotate the key** in Google Cloud Console if it was ever exposed (e.g. in browser DevTools or a shared screenshot).
+
+Serverless routes are **static paths** under `api/` (not Next.js `[...slug]` catch-alls): `api/opensky/states/all.ts`, `api/proxy/nyctmc/api/cameras.ts`, `api/proxy/caltrans.ts`, plus `api/_lib/openskyProxyAuth.ts`.
 
 ---
 
@@ -212,7 +214,7 @@ npm run build
 npm run preview  # Serves the SPA only; /api/* proxies exist on Vercel (use `vercel dev` to test them locally)
 ```
 
-> **Note:** NYC DOT and OpenSky use Vercel serverless routes under `/api/` (see [vercel.json](vercel.json) and `api/`). `vite preview` does not run those handlers.
+> **Note:** OpenSky, NYC DOT, and Caltrans CCTV JSON use Vercel serverless routes under `/api/` (see [vercel.json](vercel.json) and `api/`). `vite preview` does not run those handlers — use **`vercel dev`** to hit `/api/*` locally.
 
 ---
 

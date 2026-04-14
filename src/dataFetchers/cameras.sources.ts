@@ -1,5 +1,5 @@
 import type { CameraRecord } from './cameras.entities'
-import { getNycCamerasUrl } from '../config/publicApi'
+import { getCaltransCctvUrl, getNycCamerasUrl } from '../config/publicApi'
 
 export interface CameraEntry extends CameraRecord {
   snapshotUrl: string
@@ -88,8 +88,7 @@ const CALTRANS_RETRIES = 2
 const CALTRANS_RETRY_MS = 400
 
 async function fetchCaltrans(district: string): Promise<CameraEntry[]> {
-  const num = district.replace(/\D/g, '').padStart(2, '0')
-  const url = `https://cwwp2.dot.ca.gov/data/${district}/cctv/cctvStatusD${num}.json`
+  const url = getCaltransCctvUrl(district)
   let lastErr: unknown
   for (let attempt = 0; attempt <= CALTRANS_RETRIES; attempt++) {
     try {
