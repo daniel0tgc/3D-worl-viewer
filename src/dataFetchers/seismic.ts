@@ -1,11 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { CustomDataSource, defined } from 'cesium'
 import { useWorldStore } from '../store/useWorldStore'
-import {
-  buildSeismicEntity,
-  upsertSeismicEntity,
-  type SeismicRecord,
-} from './seismic.entities'
+import { upsertSeismicEntity, type SeismicRecord } from './seismic.entities'
 
 // ---------------------------------------------------------------------------
 // Constants

@@ -1,5 +1,6 @@
 import * as satellite from 'satellite.js'
 import {
+  ArcType,
   Cartesian3,
   Color,
   ConstantPositionProperty,
@@ -48,7 +49,7 @@ export function propagatePosition(
   if (!pv.position || typeof pv.position === 'boolean') return null
 
   const gmst = satellite.gstime(date)
-  const geo = satellite.eciToGeodetic(pv.position as satellite.EciVec3<satellite.Kilometers>, gmst)
+  const geo = satellite.eciToGeodetic(pv.position as satellite.EciVec3<satellite.Kilometer>, gmst)
 
   const lon = satellite.degreesLong(geo.longitude)
   const lat = satellite.degreesLat(geo.latitude)
@@ -131,7 +132,7 @@ export function upsertSatelliteEntity(
           glowPower: 0.2,
           color: SAT_COLOR.withAlpha(0.5),
         }),
-        followSurface: false,
+        arcType: ArcType.NONE,
       },
     }),
   )
